@@ -5,6 +5,12 @@
 Capture frames from any attached FaceTime or iSight camera on a Mac.
 Only tested on Mac OSX 10.7.
 
+* TODO list
+
+- Add a license file
+- Change the command line args to gengetopt for GNU style
+- Add a python interface
+
 * License
 
 All changes after forking from  Robert Harder's version are released
@@ -13,7 +19,7 @@ under the BSD license.
 * History
 
 Forked by Kurt Schwehr on <2012-02-20 Mon> from
-http://iharder.sourceforge.net/current/macosx/imagesnap/ at version
-0.2.5. The fork removed all of the XCode cruft, opting for a simple
+http://iharder.sourceforge.net/current/macosx/imagesnap/ at version 0.2.5. 
+The fork removed all of the XCode cruft, opting for a simple
 Makefile to build the program.
 

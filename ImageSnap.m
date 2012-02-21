@@ -1,15 +1,6 @@
-//
-//  ImageSnap.m
-//  ImageSnap
-//
-//  Created by Robert Harder on 9/10/09.
-//
-
 #import "ImageSnap.h"
 
-
 @interface ImageSnap()
-
 
 - (void)captureOutput:(QTCaptureOutput *)captureOutput 
   didOutputVideoFrame:(CVImageBufferRef)videoFrame 
@@ -21,27 +12,22 @@
 
 @implementation ImageSnap
 
-
-
 - (id)init{
-	self = [super init];
+    self = [super init];
     mCaptureSession = nil;
     mCaptureDeviceInput = nil;
     mCaptureDecompressedVideoOutput = nil;
-	mCurrentImageBuffer = nil;
-	return self;
+    mCurrentImageBuffer = nil;
+    return self;
 }
 
 - (void)dealloc{
-	
-	if( mCaptureSession )					[mCaptureSession release];
-	if( mCaptureDeviceInput )				[mCaptureDeviceInput release];
-	if( mCaptureDecompressedVideoOutput )	[mCaptureDecompressedVideoOutput release];
+    if( mCaptureSession )					[mCaptureSession release];
+    if( mCaptureDeviceInput )				[mCaptureDeviceInput release];
+    if( mCaptureDecompressedVideoOutput )	[mCaptureDecompressedVideoOutput release];
     CVBufferRelease(mCurrentImageBuffer);
-    
     [super dealloc];
 }
-
 
 // Returns an array of video devices attached to this computer.
 + (NSArray *)videoDevices{
@@ -53,32 +39,32 @@
 
 // Returns the default video device or nil if none found.
 + (QTCaptureDevice *)defaultVideoDevice{
-	QTCaptureDevice *device = nil;
+    QTCaptureDevice *device = nil;
     
-	device = [QTCaptureDevice defaultInputDeviceWithMediaType:QTMediaTypeVideo];
-	if( device == nil ){
+    device = [QTCaptureDevice defaultInputDeviceWithMediaType:QTMediaTypeVideo];
+    if( device == nil ) {
         device = [QTCaptureDevice defaultInputDeviceWithMediaType:QTMediaTypeMuxed];
-	}
+    }
     return device;
 }
 
 // Returns the named capture device or nil if not found.
 +(QTCaptureDevice *)deviceNamed:(NSString *)name{
     QTCaptureDevice *result = nil;
-    
     NSArray *devices = [ImageSnap videoDevices];
-	for( QTCaptureDevice *device in devices ){
-        if ( [name isEqualToString:[device description]] ){
+
+    for( QTCaptureDevice *device in devices ){
+        if ( [name isEqualToString:[device description]] ) {
             result = device;
-        }   // end if: match
-    }   // end for: each device
-    
+        }
+    }
+
     return result;
-}   // end
+}
 
 
 // Saves an image to a file or standard out if path is nil or "-" (hyphen).
-+ (BOOL) saveImage:(NSImage *)image toPath: (NSString*)path{
++ (BOOL) saveImage:(NSImage *)image toPath: (NSString*)path {
     
     NSString *ext = [path pathExtension];
     NSData *photoData = [ImageSnap dataFrom:image asType:ext];
@@ -90,12 +76,11 @@
         char *start = (char *)[photoData bytes];
         for( i = 0; i < length; ++i ){
             putc( start[i], stdout );
-        }   // end for: write out
+        } 
         return YES;
     } else {
         return [photoData writeToFile:path atomically:NO];
     }
-
     
     return NO;
 }
@@ -111,7 +96,6 @@
     
     NSBitmapImageFileType imageType = NSJPEGFileType;
     NSDictionary *imageProps = nil;
-    
     
     // TIFF. Special case. Can save immediately.
     if( [@"tif"  rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound ||
@@ -147,8 +131,6 @@
 
     return photoData;
 }   // end dataFrom
-
-
 
 /**
  * Primary one-stop-shopping message for capturing an image.
@@ -200,30 +182,30 @@
             //[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow: 1.0]];
             
             for (unsigned long seq=0; ; seq++)
-            {
-                NSDate *now = [[NSDate alloc] init];
-                NSString *nowstr = [dateFormatter stringFromDate:now];
+                {
+                    NSDate *now = [[NSDate alloc] init];
+                    NSString *nowstr = [dateFormatter stringFromDate:now];
                 
-                verbose(" - Snapshot %5lu", seq);
-                verbose(" (%s)\n", [nowstr UTF8String]);
+                    verbose(" - Snapshot %5lu", seq);
+                    verbose(" (%s)\n", [nowstr UTF8String]);
                 
-                // create filename
-                NSString *filename = [NSString stringWithFormat:@"snapshot-%05d-%s.jpg", seq, [nowstr UTF8String]];
+                    // create filename
+                    NSString *filename = [NSString stringWithFormat:@"snapshot-%05d-%s.jpg", seq, [nowstr UTF8String]];
                 
-                // capture and write
-                image = [snap snapshot];                // Capture a frame
-                if (image != nil)  {
-                    [ImageSnap saveImage:image toPath:filename];
-                    console( "%s\n", [filename UTF8String]);
-                } else {
-                    error( "Image capture failed.\n" );
+                    // capture and write
+                    image = [snap snapshot];                // Capture a frame
+                    if (image != nil)  {
+                        [ImageSnap saveImage:image toPath:filename];
+                        console( "%s\n", [filename UTF8String]);
+                    } else {
+                        error( "Image capture failed.\n" );
+                    }
+                
+                    // sleep
+                    [[NSRunLoop currentRunLoop] runUntilDate:[now dateByAddingTimeInterval: interval]];
+                
+                    [now release];
                 }
-                
-                // sleep
-                [[NSRunLoop currentRunLoop] runUntilDate:[now dateByAddingTimeInterval: interval]];
-                
-                [now release];
-            }
 
         } else {
             image = [snap snapshot];                // Capture a frame
@@ -241,7 +223,7 @@
     } else {
         return image == nil ? NO : [ImageSnap saveImage:image toPath:path];
     }
-}   // end
+}
 
 
 /**
@@ -254,16 +236,16 @@
     CVImageBufferRef frame = nil;               // Hold frame we find
     while( frame == nil ){                      // While waiting for a frame
 		
-		//verbose( "\tEntering synchronized block to see if frame is captured yet...");
+        //verbose( "\tEntering synchronized block to see if frame is captured yet...");
         @synchronized(self){                    // Lock since capture is on another thread
             frame = mCurrentImageBuffer;        // Hold current frame
             CVBufferRetain(frame);              // Retain it (OK if nil)
-        }   // end sync: self
-		//verbose( "Done.\n" );
+        }
+        //verbose( "Done.\n" );
 		
         if( frame == nil ){                     // Still no frame? Wait a little while.
             [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow: 0.1]];
-        }   // end if: still nothing, wait
+        }
 		
     }   // end while: no frame yet
     
@@ -276,20 +258,17 @@
     return image;
 }
 
-
-
-
 /**
  * Blocks until session is stopped.
  */
 -(void)stopSession{
-	verbose("Stopping session...\n" );
+    verbose("Stopping session...\n" );
     
     // Make sure we've stopped
     while( mCaptureSession != nil ){
-		verbose("\tCaptureSession != nil\n");
+        verbose("\tCaptureSession != nil\n");
 
-		verbose("\tStopping CaptureSession...");
+        verbose("\tStopping CaptureSession...");
         [mCaptureSession stopRunning];
 		verbose("Done.\n");
 
@@ -316,12 +295,12 @@
  */
 -(BOOL)startSession:(QTCaptureDevice *)device{
 	
-	verbose( "Starting capture session...\n" );
+    verbose( "Starting capture session...\n" );
 	
     if( device == nil ) {
 		verbose( "\tCannot start session: no device provided.\n" );
 		return NO;
-	}
+    }
     
     NSError *error = nil;
     
@@ -330,68 +309,66 @@
          mCaptureSession != nil &&
         [mCaptureSession isRunning] ){
         return YES;
-    }   // end if: already running
-	
-    else if( mCaptureSession != nil ){
+    } else if ( mCaptureSession != nil ){
 		verbose( "\tStopping previous session.\n" );
         [self stopSession];
-    }   // end if: else stop session
+    }
     
 	
-	// Create the capture session
-	verbose( "\tCreating QTCaptureSession..." );
+    // Create the capture session
+    verbose( "\tCreating QTCaptureSession..." );
     mCaptureSession = [[QTCaptureSession alloc] init];
-	verbose( "Done.\n");
-	if( ![device open:&error] ){
-		error( "\tCould not create capture session.\n" );
+    verbose( "Done.\n");
+    if( ![device open:&error] ){
+        error( "\tCould not create capture session.\n" );
         [mCaptureSession release];
         mCaptureSession = nil;
-		return NO;
-	}
+        return NO;
+    }
     
 	
-	// Create input object from the device
-	verbose( "\tCreating QTCaptureDeviceInput with %s...", [[device description] UTF8String] );
-	mCaptureDeviceInput = [[QTCaptureDeviceInput alloc] initWithDevice:device];
-	verbose( "Done.\n");
-	if (![mCaptureSession addInput:mCaptureDeviceInput error:&error]) {
-		error( "\tCould not convert device to input device.\n");
+    // Create input object from the device
+    verbose( "\tCreating QTCaptureDeviceInput with %s...", [[device description] UTF8String] );
+    mCaptureDeviceInput = [[QTCaptureDeviceInput alloc] initWithDevice:device];
+    verbose( "Done.\n");
+    if (![mCaptureSession addInput:mCaptureDeviceInput error:&error]) {
+        error( "\tCould not convert device to input device.\n");
         [mCaptureSession release];
         [mCaptureDeviceInput release];
         mCaptureSession = nil;
         mCaptureDeviceInput = nil;
-		return NO;
-	}
+        return NO;
+    }
     
 	
-	// Decompressed video output
-	verbose( "\tCreating QTCaptureDecompressedVideoOutput...");
-	mCaptureDecompressedVideoOutput = [[QTCaptureDecompressedVideoOutput alloc] init];
-	[mCaptureDecompressedVideoOutput setDelegate:self];
-	verbose( "Done.\n" );
-	if (![mCaptureSession addOutput:mCaptureDecompressedVideoOutput error:&error]) {
-		error( "\tCould not create decompressed output.\n");
+    // Decompressed video output
+    verbose( "\tCreating QTCaptureDecompressedVideoOutput...");
+    mCaptureDecompressedVideoOutput = [[QTCaptureDecompressedVideoOutput alloc] init];
+    [mCaptureDecompressedVideoOutput setDelegate:self];
+    verbose( "Done.\n" );
+    if (![mCaptureSession addOutput:mCaptureDecompressedVideoOutput error:&error]) {
+        error( "\tCould not create decompressed output.\n");
         [mCaptureSession release];
         [mCaptureDeviceInput release];
         [mCaptureDecompressedVideoOutput release];
         mCaptureSession = nil;
         mCaptureDeviceInput = nil;
         mCaptureDecompressedVideoOutput = nil;
-		return NO;
-	}
+        return NO;
+    }
 
     // Clear old image?
-	verbose("\tEntering synchronized block to clear memory...");
+    verbose("\tEntering synchronized block to clear memory...");
     @synchronized(self){
         if( mCurrentImageBuffer != nil ){
             CVBufferRelease(mCurrentImageBuffer);
             mCurrentImageBuffer = nil;
         }   // end if: clear old image
     }   // end sync: self
-	verbose( "Done.\n");
+    verbose( "Done.\n");
     
-	[mCaptureSession startRunning];
-	verbose("Session started.\n");
+    [mCaptureSession startRunning];
+    verbose("Session started.\n");
     
     return YES;
 }   // end startSession
@@ -404,9 +381,9 @@
      withSampleBuffer:(QTSampleBuffer *)sampleBuffer 
        fromConnection:(QTCaptureConnection *)connection
 {
-	verbose( "." );
+    verbose( "." );
     if (videoFrame == nil ) {
-		verbose( "'nil' Frame captured.\n" );
+        verbose( "'nil' Frame captured.\n" );
         return;
     }
     
@@ -431,170 +408,12 @@
 //
 // //////////////////////////////////////////////////////////
 
-int processArguments(int argc, const char * argv[]);
-void printUsage(int argc, const char * argv[]);
-int listDevices();
-NSString *generateFilename();
-QTCaptureDevice *getDefaultDevice();
+//int processArguments(int argc, const char * argv[]);
+//void printUsage(int argc, const char * argv[]);
+//int listDevices();
+//NSString *generateFilename();
+//QTCaptureDevice *getDefaultDevice();
 
-
-// Main entry point. Since we're using Cocoa and all kinds of fancy
-// classes, we have to set up appropriate pools and loops.
-// Thanks to the example http://lists.apple.com/archives/cocoa-dev/2003/Apr/msg01638.html
-// for reminding me how to do it.
-int main (int argc, const char * argv[]) {
-    NSApplicationLoad();    // May be necessary for 10.5 not to crash.
-    
-	NSAutoreleasePool *pool;
-	pool = [[NSAutoreleasePool alloc] init];
-    [NSApplication sharedApplication];
-	
-    int result = processArguments(argc, argv);
-    
-    //	[pool release];
-    [pool drain];
-    return result;
-}
-
-
-
-/**
- * Process command line arguments and execute program.
- */
-int processArguments(int argc, const char * argv[] ){
-	
-	NSString *filename = nil;
-	QTCaptureDevice *device = nil;
-    NSNumber *warmup = nil;
-    NSNumber *timelapse = nil;
-
-	
-	int i;
-	for( i = 1; i < argc; ++i ){
-		
-		// Handle command line switches
-		if (argv[i][0] == '-') {
-            
-            // Dash only? Means write image to stdout
-            if( argv[i][1] == 0 ){
-                filename = @"-";
-                g_quiet = YES;
-            } else {
-                
-                // Which switch was given
-                switch (argv[i][1]) {
-                    
-                    // Help
-                    case '?':
-                    case 'h':
-                        printUsage( argc, argv );
-                        return 0;
-                        break;
-
-                        
-                    // Verbose
-                    case 'v':
-                        g_verbose = YES;
-                        break;
-                    
-                    case 'q':
-                        g_quiet = YES;
-                        break;
-
-                        
-                    // List devices
-                    case 'l': 
-                        listDevices();
-                        return 0;
-                        break;
-                        
-                    // Specify device
-                    case 'd':
-                        if( i+1 < argc ){
-                            device = [ImageSnap deviceNamed:[NSString stringWithUTF8String:argv[i+1]]];
-                            if( device == nil ){
-                                error( "Device \"%s\" not found.\n", argv[i+1] );
-                                return 11;
-                            }   // end if: not found
-                            ++i; // Account for "follow on" argument
-                        } else {
-                            error( "Not enough arguments given with 'd' flag.\n" );
-                            return (int)'d';
-                        }
-                        break;
-                        
-                    // Specify a warmup period before picture snaps
-                    case 'w':
-                        if( i+1 < argc ){
-                            warmup = [NSNumber numberWithFloat:[[NSString stringWithUTF8String:argv[i+1]] floatValue]];
-                            ++i; // Account for "follow on" argument
-                        } else {
-                            error( "Not enough arguments given with 'w' flag.\n" );
-                            return (int)'w';
-                        }
-                        break;
-                        
-                    // Timelapse
-                    case 't':
-                        if( i+1 < argc ){
-                            timelapse = [NSNumber numberWithDouble:[[NSString stringWithUTF8String:argv[i+1]] doubleValue]];
-                            //g_timelapse = [timelapse doubleValue];
-                            ++i; // Account for "follow on" argument
-                        } else {
-                            error( "Not enough arguments given with 't' flag.\n" );
-                            return (int)'t';
-                        }
-                        break;
-
-                    
-                        
-                }	// end switch: flag value
-            }   // end else: not dash only
-		}	// end if: '-'
-        
-        // Else assume it's a filename
-		else {
-			filename = [NSString stringWithUTF8String:argv[i]];
-		}
-
-	}	// end for: each command line argument
-	
-    
-    // Make sure we have a filename
-	if( filename == nil ){
-		filename = generateFilename();
-		verbose( "No filename specified. Using %s\n", [filename UTF8String] );
-	}	// end if: no filename given
-	
-    if( filename == nil ){
-        error( "No suitable filename could be determined.\n" );
-        return 1;
-    }
-	
-    
-    // Make sure we have a device
-	if( device == nil ){
-		device = getDefaultDevice();
-		verbose( "No device specified. Using %s\n", [[device description] UTF8String] );
-	}	// end if: no device given
-	
-    if( device == nil ){
-        error( "No video devices found.\n" );
-        return 2;
-    } else {
-        console( "Capturing image from device \"%s\"...", [[device description] UTF8String] );
-    }
-	
-    
-    // Image capture
-    if( [ImageSnap saveSingleSnapshotFrom:device toFile:filename withWarmup:warmup withTimelapse:timelapse] ){
-        console( "%s\n", [filename UTF8String] );
-    } else {
-        error( "Error.\n" );
-    }   // end else
-    
-    return 0;
-}
 
 
 
@@ -615,24 +434,22 @@ void printUsage(int argc, const char * argv[]){
 }
 
 
-
-
-
 /**
  * Prints a list of video capture devices to standard out.
  */
 int listDevices(){
-	NSArray *devices = [ImageSnap videoDevices];
+    NSArray *devices = [ImageSnap videoDevices];
     
     [devices count] > 0 
 		? printf("Video Devices:\n") 
 		: printf("No video devices found.\n");
     
-	for( QTCaptureDevice *device in devices ){
-		printf( "%s\n", [[device description] UTF8String] );
-	}	// end for: each device
+    for( QTCaptureDevice *device in devices ){
+        printf( "%s\n", [[device description] UTF8String] );
+    }	// end for: each device
     return [devices count];
 }
+
 
 /**
  * Generates a filename for saving the image, presumably
@@ -642,7 +459,7 @@ int listDevices(){
 NSString *generateFilename(){
 	NSString *result = @"snapshot.jpg";
 	return result;
-}	// end
+}
 
 
 /**
@@ -655,4 +472,160 @@ QTCaptureDevice *getDefaultDevice(){
 }	// end
 
 
+// FIX: convert this to a GNU standard option parsing library
 
+/**
+ * Process command line arguments and execute program.
+ */
+int processArguments(int argc, const char * argv[] ){
+	
+    NSString *filename = nil;
+    QTCaptureDevice *device = nil;
+    NSNumber *warmup = nil;
+    NSNumber *timelapse = nil;
+	
+    int i;
+    for( i = 1; i < argc; ++i ){
+		
+        // Handle command line switches
+        if (argv[i][0] == '-') {
+            
+            // Dash only? Means write image to stdout
+            if( argv[i][1] == 0 ){
+                filename = @"-";
+                g_quiet = YES;
+            } else {
+                
+                // Which switch was given
+                switch (argv[i][1]) {
+                    
+                    // Help
+                case '?':
+                case 'h':
+                    printUsage( argc, argv );
+                    return 0;
+                    break;
+
+                        
+                    // Verbose
+                case 'v':
+                    g_verbose = YES;
+                    break;
+                    
+                case 'q':
+                    g_quiet = YES;
+                    break;
+
+                        
+                    // List devices
+                case 'l': 
+                    listDevices();
+                    return 0;
+                    break;
+                        
+                    // Specify device
+                case 'd':
+                    if( i+1 < argc ){
+                        device = [ImageSnap deviceNamed:[NSString stringWithUTF8String:argv[i+1]]];
+                        if( device == nil ){
+                            error( "Device \"%s\" not found.\n", argv[i+1] );
+                            return 11;
+                        }   // end if: not found
+                        ++i; // Account for "follow on" argument
+                    } else {
+                        error( "Not enough arguments given with 'd' flag.\n" );
+                        return (int)'d';
+                    }
+                    break;
+                        
+                    // Specify a warmup period before picture snaps
+                case 'w':
+                    if( i+1 < argc ){
+                        warmup = [NSNumber numberWithFloat:[[NSString stringWithUTF8String:argv[i+1]] floatValue]];
+                        ++i; // Account for "follow on" argument
+                    } else {
+                        error( "Not enough arguments given with 'w' flag.\n" );
+                        return (int)'w';
+                    }
+                    break;
+                        
+                    // Timelapse
+                case 't':
+                    if( i+1 < argc ){
+                        timelapse = [NSNumber numberWithDouble:[[NSString stringWithUTF8String:argv[i+1]] doubleValue]];
+                        //g_timelapse = [timelapse doubleValue];
+                        ++i; // Account for "follow on" argument
+                    } else {
+                        error( "Not enough arguments given with 't' flag.\n" );
+                        return (int)'t';
+                    }
+                    break;
+
+                    
+                        
+                }	// end switch: flag value
+            }   // end else: not dash only
+        }	// end if: '-'
+        
+        // Else assume it's a filename
+        else {
+            filename = [NSString stringWithUTF8String:argv[i]];
+        }
+
+    }	// end for: each command line argument
+	
+    
+    // Make sure we have a filename
+    if( filename == nil ){
+        filename = generateFilename();
+        verbose( "No filename specified. Using %s\n", [filename UTF8String] );
+    }	// end if: no filename given
+	
+    if( filename == nil ){
+        error( "No suitable filename could be determined.\n" );
+        return 1;
+    }
+	
+    
+    // Make sure we have a device
+    if( device == nil ){
+        device = getDefaultDevice();
+        verbose( "No device specified. Using %s\n", [[device description] UTF8String] );
+    }	// end if: no device given
+	
+    if( device == nil ){
+        error( "No video devices found.\n" );
+        return 2;
+    } else {
+        console( "Capturing image from device \"%s\"...", [[device description] UTF8String] );
+    }
+	
+    
+    // Image capture
+    if( [ImageSnap saveSingleSnapshotFrom:device toFile:filename withWarmup:warmup withTimelapse:timelapse] ){
+        console( "%s\n", [filename UTF8String] );
+    } else {
+        error( "Error.\n" );
+    }   // end else
+    
+    return 0;
+}
+
+
+// Main entry point. Since we're using Cocoa and all kinds of fancy
+// classes, we have to set up appropriate pools and loops.
+// Thanks to the example http://lists.apple.com/archives/cocoa-dev/2003/Apr/msg01638.html
+// for reminding me how to do it.
+int main (int argc, const char * argv[]) {
+    NSApplicationLoad();    // May be necessary for 10.5 not to crash.
+    
+    NSAutoreleasePool *pool;
+    pool = [[NSAutoreleasePool alloc] init];
+    [NSApplication sharedApplication];
+	
+    int result = processArguments(argc, argv);
+    
+    //	[pool release];
+    [pool drain];
+    return result;
+}
